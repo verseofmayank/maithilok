@@ -5,6 +5,20 @@ A local, production-oriented Indian food storefront built with Next.js App Route
 **From Mithila, To Your Home**  
 **मिथिला की परंपरा, आपके घर तक**
 
+## Live demo
+
+**https://maithilok.vercel.app**
+
+Deployed on Vercel (Node 22) against a Neon PostgreSQL database. Demo checkout is enabled; live commerce, payments and email delivery remain disabled. The catalogue is seeded from `prisma/seed.ts`, and no admin account is created in production — use `npm run admin:create` if you need one.
+
+To redeploy after changes (the repo is not yet connected to Vercel's Git integration):
+
+```bash
+npx vercel deploy --prod
+```
+
+Production builds use the PostgreSQL schema with `prisma generate --schema prisma/postgresql/schema.prisma && prisma migrate deploy --schema prisma/postgresql/schema.prisma && next build` (see `vercel.json`). Required environment variables: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEXT_PUBLIC_SITE_URL`, `LIVE_COMMERCE_ENABLED=false`.
+
 ## Quick start
 
 Requirements: Node.js 22 LTS (or a supported version for the installed Next.js release), npm, and a modern browser.
