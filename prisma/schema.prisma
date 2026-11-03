@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+model Product {
+ id String @id @default(cuid())
+ name String
+ hindiName String @default("")
+ slug String @unique
+ categoryId String
+ category Category @relation(fields: [categoryId], references: [id])
+ subcategory String @default("")
+ description String
+ shortDescription String
+ images Json
+ status String @default("DRAFT")
+ featured Boolean @default(false)
+ details Json
+ seoTitle String @default("")
+ seoDescription String @default("")
+ variants Variant[]
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([status, categoryId])
+}
+model Variant {
+ id String @id @default(cuid())
+ productId String
+ product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+ label String
+ sku String @unique
+ weight Int
+ price Int
+ compareAt Int?
+ stock Int @default(0)
+ image String @default("")
+}
+model Category {
+ id String @id @default(cuid())
+ name String
+ slug String @unique
+ description String @default("")
+ image String @default("")
+ parentId String?
+ parent Category? @relation("Hierarchy", fields: [parentId], references: [id])
+ children Category[] @relation("Hierarchy")
+ sortOrder Int @default(0)
+ products Product[]
+}
+model User {
+ id String @id @default(cuid())
+ name String
+ email String @unique
+ passwordHash String
+ role String @default("CUSTOMER")
+ phone String @default("")
+ wishlist Json @default("[]")
+ createdAt DateTime @default(now())
+ sessions Session[]
+ addresses Address[]
+ orders Order[]
+ resets PasswordReset[]
+}
+model Session {
+ id String @id
+ userId String
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ expiresAt DateTime
+ @@index([userId])
+ @@index([expiresAt])
+}
+model PasswordReset {
+ id String @id
+ userId String
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ expiresAt DateTime
+}
+model Address {
+ id String @id @default(cuid())
+ userId String
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ data Json
+}
+model Order {
+ id String @id @default(cuid())
+ number String @unique
+ userId String?
+ user User? @relation(fields: [userId], references: [id])
+ email String
+ address Json
+ items Json
+ subtotal Int
+ discount Int @default(0)
+ shipping Int @default(0)
+ total Int
+ mode String @default("DEMO")
+ paymentStatus String @default("DEMO_SIMULATED")
+ status String @default("PLACED")
+ coupon String @default("")
+ trackingCode String @default("")
+ trackingUrl String @default("")
+ courier String @default("")
+ gatewayOrderId String? @unique
+ gatewayPaymentId String? @unique
+ accessHash String
+ idempotencyKey String @unique
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@index([userId, createdAt])
+ @@index([mode, paymentStatus])
+}
+model Enquiry {
+ id String @id @default(cuid())
+ name String
+ email String
+ mobile String @default("")
+ subject String
+ message String
+ type String
+ status String @default("OPEN")
+ reply String @default("")
+ createdAt DateTime @default(now())
+ @@index([status, createdAt])
+}
+model Subscriber {
+ id String @id @default(cuid())
+ email String @unique
+ consentAt DateTime @default(now())
+}
+model Coupon {
+ id String @id @default(cuid())
+ code String @unique
+ percent Int
+ minimum Int @default(0)
+ active Boolean @default(true)
+ expiresAt DateTime?
+}
+model ShippingRule {
+ id String @id @default(cuid())
+ name String
+ states Json @default("[]")
+ pincodes Json @default("[]")
+ base Int
+ perKg Int @default(0)
+ freeAbove Int?
+ active Boolean @default(true)
+}
+model Setting {
+ key String @id
+ value Json
+}
+model RateLimit {
+ key String @id
+ hits Int @default(1)
+ expiresAt DateTime
+}
+model AuditLog {
+ id String @id @default(cuid())
+ actorId String
+ action String
+ entityId String
+ createdAt DateTime @default(now())
+}

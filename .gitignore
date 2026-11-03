@@ -1,0 +1,13 @@
+node_modules/
+.next/
+.env
+.env.*
+!.env.example
+*.db
+*.db-*
+.npm-cache/
+.local/
+test-results/
+playwright-report/
+public/uploads/
+*.tsbuildinfo
