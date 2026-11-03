@@ -11,3 +11,5 @@ test-results/
 playwright-report/
 public/uploads/
 *.tsbuildinfo
+.vercel
+.env*
