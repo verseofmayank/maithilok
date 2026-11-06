@@ -537,7 +537,7 @@ export function AuthForm({ mode = 'login', admin = false }: { mode?: string; adm
                   [
                     'password',
                     mode === 'register' || mode === 'reset'
-                      ? 'Password (12+ characters)'
+                      ? 'Password (6+ characters)'
                       : 'Password',
                     'password',
                   ],

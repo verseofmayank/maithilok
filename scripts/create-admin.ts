@@ -9,7 +9,7 @@ try {
   const address = email.parse(process.env.ADMIN_EMAIL || (await rl.question('Admin email: ')));
   const password = passwordSchema.parse(
     process.env.ADMIN_PASSWORD ||
-      (await rl.question('New password (12+ characters; input is visible locally): ')),
+      (await rl.question('New password (6+ characters; input is visible locally): ')),
   );
   const existing = await db.user.findUnique({ where: { email: address } });
   if (existing) throw new Error('Account already exists. No account was changed.');

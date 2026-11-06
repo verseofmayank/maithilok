@@ -47,7 +47,7 @@ No admin password is seeded, exposed in the storefront, or committed. Create you
 npm run admin:create
 ```
 
-The interactive command asks for an email and a new password of at least 12 characters. Input is visible in the local terminal, so use it in a private terminal. For automation, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` through a secure environment, never source files or shell history. The script refuses to overwrite an existing account.
+The interactive command asks for an email and a new password of at least 6 characters. Input is visible in the local terminal, so use it in a private terminal. For automation, provide `ADMIN_EMAIL` and `ADMIN_PASSWORD` through a secure environment, never source files or shell history. The script refuses to overwrite an existing account.
 
 Sign in at **http://localhost:3100/admin/login**. Admin sessions are random, stored hashed in the database, and delivered through HTTP-only SameSite cookies. Use HTTPS in production; cookie security follows the configured site URL.
 

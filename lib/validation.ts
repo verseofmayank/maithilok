@@ -34,4 +34,4 @@ export const enquirySchema = z.object({
   message: z.string().trim().min(10).max(5000),
   type: z.enum(['General enquiry', 'Product enquiry', 'Order support']),
 });
-export const passwordSchema = z.string().min(12, 'Use at least 12 characters').max(128);
+export const passwordSchema = z.string().min(6, 'Use at least 6 characters').max(128);
