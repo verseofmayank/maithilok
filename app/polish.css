@@ -548,3 +548,87 @@ em,
 }
 
 @media(max-width:600px){.hero-copy{width:100%;min-width:0}.hero h1{font-size:36px;line-height:40px}.hero h1 span{white-space:normal;overflow-wrap:normal}.hero-copy p{max-width:100%}}
+
+/* ---- Visual refinement pass (Nov 2026) ---- */
+::selection{background:#173f3522;color:var(--green)}
+
+/* Hero: warmer depth, readable image caption */
+.hero{background:radial-gradient(125% 120% at 0% 0%,#f8f4e8 0%,#f1edde 58%,#eae4d2 100%)}
+.hero-image:after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(18,45,37,.22),rgba(18,45,37,0) 26%);
+}
+.hero-image-caption{
+  top:20px;left:20px;z-index:2;
+  background:rgba(251,249,243,.9);color:#3f4d38;
+  padding:7px 13px;border-radius:999px;font-weight:600;letter-spacing:1.8px;
+  box-shadow:0 8px 20px -14px rgba(0,0,0,.55);backdrop-filter:blur(4px);
+}
+
+/* Product cards: restrained depth + consistent frame */
+.product-photo{
+  transition:transform .45s var(--motion-curve),box-shadow .45s var(--motion-curve);
+  box-shadow:0 14px 30px -26px rgba(23,63,53,.55);
+}
+.product-photo:after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;
+  box-shadow:inset 0 0 0 1px rgba(23,63,53,.09);
+}
+.product-card:hover .product-photo{
+  transform:translateY(-3px);box-shadow:0 26px 46px -30px rgba(23,63,53,.6);
+}
+.product-card h3 a{transition:color .25s}
+.product-card:hover h3 a{color:#2c5a4b}
+.product-card-price strong{font-weight:600}
+
+/* Category circles: lift on hover instead of flat beige discs */
+.category-circle>div{
+  box-shadow:inset 0 0 0 1px rgba(23,63,53,.08),0 14px 30px -26px rgba(23,63,53,.5);
+  transition:box-shadow .35s var(--motion-curve),transform .35s var(--motion-curve);
+}
+.category-circle:hover>div{
+  transform:translateY(-3px);
+  box-shadow:inset 0 0 0 1px rgba(23,63,53,.14),0 24px 40px -26px rgba(23,63,53,.55);
+}
+.category-circle h3{font-weight:600;color:#2b3f36}
+
+/* Shop filters: quiet accent rail on the active category */
+@media(min-width:601px){
+  .filters>button{
+    border-left:2px solid transparent;border-radius:0 4px 4px 0;
+    padding:9px 0 9px 12px;
+    transition:background .2s,color .2s,border-color .2s;
+  }
+  .filters>button:hover{background:#f2f1e7;color:var(--green)}
+  .filters>button.active{
+    background:linear-gradient(90deg,#e9eddf,#f8f7ef);border-left-color:var(--green);
+  }
+}
+
+/* Contact: stop the info panel stretching to the form's full height */
+.contact-layout{align-items:start}
+.contact-details{align-self:start;border:1px solid #e1e6d7}
+
+/* Product detail polish */
+.detail-image{box-shadow:0 26px 52px -42px rgba(23,63,53,.6)}
+.thumbnails img{width:72px;height:82px}
+.thumbnails button{transition:border-color .2s,transform .2s}
+.thumbnails button:hover{border-color:#b9c3b2}
+.variant-options button{transition:border-color .2s,background .2s,box-shadow .2s}
+.variant-options button:hover{border-color:#b6c1ad;background:#f7f8f1}
+.product-accordions summary{font-weight:500}
+.summary-card{box-shadow:0 22px 44px -38px rgba(23,63,53,.55)}
+
+/* Buttons and links: tighter feedback */
+.button{box-shadow:0 10px 22px -18px rgba(23,63,53,.7)}
+.button:hover{box-shadow:0 16px 28px -18px rgba(23,63,53,.65)}
+.header-inner nav a:hover{color:#0f2f27}
+.footer-main>div>a:not(.brand):hover{color:var(--green)}
+.text-link:hover{border-bottom-color:var(--green)}
+
+@media(max-width:600px){
+  .hero-image-caption{top:14px;left:14px;padding:6px 10px;font-size:7px}
+  .product-photo{box-shadow:0 10px 24px -24px rgba(23,63,53,.5)}
+  .product-card:hover .product-photo{transform:none;box-shadow:0 10px 24px -24px rgba(23,63,53,.5)}
+  .contact-details{border:0}
+}

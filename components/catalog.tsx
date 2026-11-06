@@ -900,10 +900,14 @@ export function ProductDetail({ product, products }: { product: Product; product
             <span className="eyebrow">A LITTLE MORE TO EXPLORE</span>
             <h2>You might also like.</h2>
           </div>
+          <Link href="/shop" className="text-link">
+            View the collection →
+          </Link>
         </div>
         <div className="product-grid">
-          {products
-            .filter((p) => p.id !== product.id && p.status === 'ACTIVE')
+          {[...products]
+            .filter((p) => p.id !== product.id)
+            .sort((a, b) => Number(b.status === 'ACTIVE') - Number(a.status === 'ACTIVE'))
             .slice(0, 3)
             .map((p) => (
               <ProductCard key={p.id} product={p} />
