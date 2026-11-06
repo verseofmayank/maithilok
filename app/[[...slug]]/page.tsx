@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { db } from '@/lib/db';
+import { publicSetting } from '@/lib/storefront';
 import { launchState } from '@/lib/commerce';
 import { site, addressLine, telHref } from '@/lib/site';
 import { About } from '@/components/about';
@@ -117,14 +118,30 @@ export default async function Page({ params, searchParams }: Props) {
     query = await searchParams,
     root = slug[0] || '',
     sub = slug[1] || '';
-  const [rawProducts, categories, settings, launch] = await Promise.all([
-    db.product.findMany({
-      where: { status: { in: ['ACTIVE', 'COMING_SOON'] } },
-      include: { variants: true, category: true },
-      orderBy: { createdAt: 'asc' },
-    }),
-    db.category.findMany({ orderBy: { sortOrder: 'asc' } }),
-    db.setting.findMany(),
+  const needsProducts =
+    ['', 'shop', 'search', 'wishlist', 'coming-soon', 'products'].includes(root) ||
+    (root === 'categories' && !!sub);
+  const needsCategories = ['', 'shop', 'search', 'wishlist', 'coming-soon', 'categories'].includes(
+    root,
+  );
+  const needsContent = ['', 'about', 'our-story'].includes(root);
+  const needsPolicies = [
+    'shipping-policy',
+    'return-refund-policy',
+    'privacy-policy',
+    'terms-and-conditions',
+  ].includes(root);
+  const [rawProducts, categories, content, policies, launch] = await Promise.all([
+    needsProducts
+      ? db.product.findMany({
+          where: { status: { in: ['ACTIVE', 'COMING_SOON'] } },
+          include: { variants: true, category: true },
+          orderBy: { createdAt: 'asc' },
+        })
+      : Promise.resolve([]),
+    needsCategories ? db.category.findMany({ orderBy: { sortOrder: 'asc' } }) : Promise.resolve([]),
+    needsContent ? publicSetting('content') : Promise.resolve<Record<string, string>>({}),
+    needsPolicies ? publicSetting('policies') : Promise.resolve<Record<string, string>>({}),
     launchState(),
   ]);
   const products = JSON.parse(
@@ -138,9 +155,7 @@ export default async function Page({ params, searchParams }: Props) {
         })),
       ),
     ) as Product[],
-    cats = categories as Category[],
-    content = settings.find((s) => s.key === 'content')?.value as Record<string, string>,
-    policies = settings.find((s) => s.key === 'policies')?.value as Record<string, string>;
+    cats = categories as Category[];
   let page: React.ReactNode;
   if (!root) page = <Home products={products} categories={cats} content={content} />;
   else if (root === 'shop' || root === 'search' || root === 'wishlist' || root === 'coming-soon')

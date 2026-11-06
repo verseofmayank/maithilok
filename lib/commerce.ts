@@ -123,7 +123,13 @@ export async function quote(raw: unknown, client: Prisma.TransactionClient = db)
   };
 }
 
-export const launchState = cache(readiness);
+export const launchState = cache(async () => {
+  // The environment switch alone closes commerce. Rendering informational pages
+  // need not query products/shipping to rediscover that; checkout uses readiness().
+  if (process.env.LIVE_COMMERCE_ENABLED !== 'true')
+    return { ready: false, missing: ['Live commerce environment switch'] };
+  return readiness();
+});
 export async function releaseStaleOrders(minutes = 30) {
   const cutoff = new Date(Date.now() - minutes * 60000);
   const stale = await db.order.findMany({

@@ -47,7 +47,7 @@ test('contact form stores enquiry and rejects invalid input', async ({ page }) =
     .fill('This is a local automated test enquiry. No email needs to be sent.');
   await page.getByRole('button', { name: 'Send enquiry' }).click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Your enquiry has been saved' }),
+    page.getByRole('status').filter({ hasText: 'Your message has reached us' }),
   ).toBeVisible();
   expect(await db.enquiry.count({ where: { subject: `QA enquiry ${run}` } })).toBe(1);
 });
@@ -105,7 +105,7 @@ test('coming soon cannot be purchased and server blocks tampering', async ({ pag
     },
   });
   expect(live.status()).toBe(400);
-  expect((await live.json()).error).toContain('disabled');
+  expect((await live.json()).error).toContain('Online ordering is not open yet');
   const cross = await page.request.post('/api/enquiries', {
     headers: { Origin: 'https://untrusted.example' },
     data: {},

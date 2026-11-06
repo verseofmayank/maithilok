@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
+import { PUBLIC_CONTENT_TAG } from '@/lib/storefront';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import {
@@ -832,6 +834,8 @@ export async function POST(request: NextRequest, context: Context) {
           create: { key: data.key, value: data.value },
           update: { value: data.value },
         });
+        if (data.key === 'content' || data.key === 'policies')
+          revalidateTag(PUBLIC_CONTENT_TAG, { expire: 0 });
       } else throw new Error('Unknown administration action');
       await db.auditLog.create({
         data: {

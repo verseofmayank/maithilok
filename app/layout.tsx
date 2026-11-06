@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { db } from '@/lib/db';
+import { publicSetting } from '@/lib/storefront';
 import { launchState } from '@/lib/commerce';
 import { site } from '@/lib/site';
 import { StoreProvider } from '@/components/store-provider';
@@ -47,11 +47,10 @@ const organization = {
   },
 };
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [setting, launch] = await Promise.all([
-    db.setting.findUnique({ where: { key: 'content' } }),
+  const [content, launch] = await Promise.all([
+    publicSetting('content'),
     launchState().catch(() => ({ ready: false })),
   ]);
-  const content = (setting?.value as Record<string, string>) || {};
   return (
     <html lang="en">
       <body>
