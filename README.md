@@ -1,6 +1,8 @@
 # Maithilok · मैथिल लोक
 
-A local, production-oriented Indian food storefront built with Next.js App Router, TypeScript, Tailwind CSS, Radix accessible dialogs, Lucide, Motion, Prisma, Zod and React Hook Form. This is a working local demo, not authorization to launch commercial sales.
+Production storefront for Maithilok, a ghee brand from **Darbhanga, Bihar**. **Launch steps: see [LAUNCH.md](LAUNCH.md).**
+
+Built with Next.js App Router, TypeScript, Tailwind CSS, Radix accessible dialogs, Lucide, Motion, Prisma, Zod and React Hook Form.
 
 **From Mithila, To Your Home**  
 **मिथिला की परंपरा, आपके घर तक**
@@ -9,15 +11,9 @@ A local, production-oriented Indian food storefront built with Next.js App Route
 
 **https://maithilok.vercel.app**
 
-Deployed on Vercel (Node 22) against a Neon PostgreSQL database. Demo checkout is enabled; live commerce, payments and email delivery remain disabled. The catalogue is seeded from `prisma/seed.ts`, and no admin account is created in production — use `npm run admin:create` if you need one.
+Deployed on Vercel (Node 22) against a Neon PostgreSQL database. The store runs in preview mode until the launch checklist passes, then switches to Razorpay checkout automatically. Gmail (app password) powers contact-form delivery, customer confirmations and owner alerts; every sign-up, sign-in, order, payment and message is recorded in Admin → Activity log. The catalogue is seeded from `prisma/seed.ts`, and no admin account is created in production — use `npm run admin:create` if you need one.
 
-To redeploy after changes (the repo is not yet connected to Vercel's Git integration):
-
-```bash
-npx vercel deploy --prod
-```
-
-Production builds use the PostgreSQL schema with `prisma generate --schema prisma/postgresql/schema.prisma && prisma migrate deploy --schema prisma/postgresql/schema.prisma && next build` (see `vercel.json`). Required environment variables: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEXT_PUBLIC_SITE_URL`, `LIVE_COMMERCE_ENABLED=false`.
+Production builds run `npm run vercel-build`: PostgreSQL client generation, `prisma migrate deploy`, the idempotent seed (which also upgrades old copy and image paths) and `next build`. Required environment variables: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEXT_PUBLIC_SITE_URL`, `LIVE_COMMERCE_ENABLED=false`.
 
 ## Quick start
 

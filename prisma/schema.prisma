@@ -164,3 +164,14 @@ model AuditLog {
  entityId String
  createdAt DateTime @default(now())
 }
+model ActivityLog {
+ id String @id @default(cuid())
+ type String
+ message String
+ email String @default("")
+ ip String @default("")
+ meta Json @default("{}")
+ createdAt DateTime @default(now())
+ @@index([type, createdAt])
+ @@index([createdAt])
+}
