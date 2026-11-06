@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { PUBLIC_CONTENT_TAG } from '@/lib/storefront';
+import { canReview } from '@/lib/reviews';
 import { cookies } from 'next/headers';
 import { db } from '@/lib/db';
 import {
@@ -47,6 +48,40 @@ export async function GET(request: NextRequest, context: Context) {
   try {
     const route = (await context.params).path.join('/');
     const user = await currentUser();
+    if (route === 'reviews') {
+      const productId = z
+        .string()
+        .min(1)
+        .max(100)
+        .parse(request.nextUrl.searchParams.get('productId'));
+      const product = await db.product.findFirst({
+        where: { id: productId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!product) return json({ error: 'Product not found' }, 404);
+      const reviews = await db.review.findMany({
+        where: { productId, status: 'APPROVED' },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+        select: {
+          id: true,
+          title: true,
+          body: true,
+          rating: true,
+          createdAt: true,
+          user: { select: { name: true } },
+        },
+      });
+      return json({
+        reviews: reviews.map(({ user: reviewer, ...review }) => ({
+          ...review,
+          name: reviewer.name.trim().split(/\s+/)[0],
+          verifiedPurchase: true,
+        })),
+        signedIn: Boolean(user),
+        eligible: user ? await canReview(user.id, productId) : false,
+      });
+    }
     if (route === 'catalog') {
       const [products, categories] = await Promise.all([
         db.product.findMany({
@@ -113,6 +148,14 @@ export async function GET(request: NextRequest, context: Context) {
     if (route.startsWith('admin/')) {
       await requireAdmin();
       const entity = route.slice(6);
+      if (entity === 'reviews')
+        return json(
+          await db.review.findMany({
+            orderBy: { createdAt: 'desc' },
+            take: 300,
+            include: { product: { select: { name: true } }, user: { select: { name: true } } },
+          }),
+        );
       if (entity === 'overview') {
         await releaseStaleOrders().catch(() => 0);
         const since = new Date(Date.now() - 86400000);
@@ -141,6 +184,22 @@ export async function GET(request: NextRequest, context: Context) {
           lowStock,
           launch,
           mailConfigured: mailConfigured(),
+          services: {
+            environment: process.env.VERCEL ? 'Vercel deployment' : 'Local server',
+            database: process.env.DATABASE_URL?.startsWith('file:') ? 'Local SQLite' : 'PostgreSQL',
+            keyMode: !process.env.RAZORPAY_KEY_ID
+              ? 'missing'
+              : process.env.RAZORPAY_KEY_ID.startsWith('rzp_live_')
+                ? 'live'
+                : process.env.RAZORPAY_KEY_ID.startsWith('rzp_test_')
+                  ? 'test'
+                  : 'unknown',
+            keySecret: Boolean(process.env.RAZORPAY_KEY_SECRET),
+            webhookSecret: Boolean(process.env.RAZORPAY_WEBHOOK_SECRET),
+            commerceEnabled: process.env.LIVE_COMMERCE_ENABLED === 'true',
+            emailConfigured: mailConfigured(),
+            webhookUrl: `${site.url}/api/payments/webhook`,
+          },
           signupsToday,
           recentActivity,
         });
@@ -268,6 +327,33 @@ export async function POST(request: NextRequest, context: Context) {
     if (Number(request.headers.get('content-length') || 0) > 100000)
       throw new Error('Request is too large');
     const body = await request.json();
+    if (route === 'reviews') {
+      const user = await currentUser();
+      if (!user) return json({ error: 'Sign in to review your purchase.' }, 401);
+      const data = z
+        .object({
+          productId: z.string().min(1).max(100),
+          rating: z.number().int().min(1).max(5),
+          title: z.string().trim().min(3).max(100),
+          body: z.string().trim().min(20).max(2000),
+        })
+        .parse(body);
+      await rateLimit(`review:${user.id}`, 10);
+      if (!(await canReview(user.id, data.productId)))
+        return json(
+          {
+            error:
+              'Reviews open after a paid live order has been delivered. Demo orders are not eligible.',
+          },
+          403,
+        );
+      await db.review.upsert({
+        where: { productId_userId: { productId: data.productId, userId: user.id } },
+        create: { ...data, userId: user.id },
+        update: { ...data, status: 'PENDING' },
+      });
+      return json({ message: 'Your review has been saved for moderation.' });
+    }
     if (route.startsWith('auth/')) {
       const action = route.slice(5);
       await rateLimit(`auth-ip:${hash(ip)}`, 40);
@@ -679,6 +765,11 @@ export async function POST(request: NextRequest, context: Context) {
           }
           return p;
         });
+      } else if (entity === 'reviews') {
+        const data = z
+          .object({ id: z.string(), status: z.enum(['APPROVED', 'REJECTED']) })
+          .parse(body);
+        result = await db.review.update({ where: { id: data.id }, data: { status: data.status } });
       } else if (entity === 'archive') {
         result = await db.product.update({
           where: { id: z.string().parse(body.id) },

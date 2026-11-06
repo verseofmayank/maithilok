@@ -5,6 +5,7 @@ import { site } from '@/lib/site';
 import { StoreProvider } from '@/components/store-provider';
 import { Shell } from '@/components/shell';
 import './globals.css';
+import './polish.css';
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
@@ -22,8 +23,8 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', images: ['/banners/og-image.jpg'] },
   icons: {
-    icon: [{ url: '/icons/favicon.svg', type: 'image/svg+xml' }, { url: '/icons/icon-192.png' }],
-    apple: '/icons/apple-touch-icon.png',
+    icon: [{ url: '/branding/symbol-v2.svg', type: 'image/svg+xml' }, { url: '/icons/brand-192.png' }],
+    apple: '/icons/brand-180.png',
   },
   manifest: '/manifest.webmanifest',
   robots: { index: !site.url.includes('localhost'), follow: true },
@@ -34,7 +35,7 @@ const organization = {
   '@type': 'OnlineStore',
   name: site.name,
   url: site.url,
-  logo: `${site.url}/icons/icon-512.png`,
+  logo: `${site.url}/icons/brand-512.png`,
   email: site.email,
   telephone: site.phone,
   address: {

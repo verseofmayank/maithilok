@@ -27,7 +27,12 @@ import {
   Download,
   ShieldCheck,
   Activity,
+  Plug,
+  RefreshCw,
+  Star,
 } from 'lucide-react';
+import { Operations } from './operations';
+import { toCsv } from '@/lib/csv';
 import { Logo } from './shell';
 import { api, Button } from './ui';
 import { useStore } from './store-provider';
@@ -41,6 +46,8 @@ const sections = [
   ['orders', 'Orders', ShoppingBag],
   ['customers', 'Customers', Users],
   ['activity', 'Activity log', Activity],
+  ['reviews', 'Product reviews', Star],
+  ['integrations', 'Integrations & help', Plug],
   ['enquiries', 'Customer queries', MessageSquare],
   ['messages', 'Contact messages', Mail],
   ['promotions', 'Promotions', Ticket],
@@ -60,6 +67,7 @@ const entities: Record<string, string> = {
   analytics: 'orders',
   customers: 'customers',
   activity: 'activity',
+  reviews: 'reviews',
   enquiries: 'enquiries',
   messages: 'enquiries',
   promotions: 'coupons',
@@ -105,7 +113,9 @@ export function Admin({ section, name }: { section: string; name: string }) {
     [edit, setEdit] = useState<any>(null),
     [busy, setBusy] = useState(false),
     [filter, setFilter] = useState(''),
-    [status, setStatus] = useState('');
+    [status, setStatus] = useState(''),
+    [period, setPeriod] = useState('all'),
+    [loadedAt, setLoadedAt] = useState(0);
   const store = useStore(),
     router = useRouter();
   const title = sections.find((s) => s[0] === section)?.[1] || 'Dashboard';
@@ -113,11 +123,14 @@ export function Admin({ section, name }: { section: string; name: string }) {
     setLoading(true);
     try {
       const [rows, stats, cats] = await Promise.all([
-        section === 'dashboard' ? Promise.resolve([]) : api(`admin/${entities[section]}`),
+        ['dashboard', 'integrations'].includes(section)
+          ? Promise.resolve([])
+          : api(`admin/${entities[section]}`),
         api('admin/overview'),
         api('admin/categories'),
       ]);
       setData(rows);
+      setLoadedAt(Date.now());
       setOverview(stats);
       setCategories(cats);
       setError('');
@@ -198,6 +211,25 @@ export function Admin({ section, name }: { section: string; name: string }) {
     if (!response.ok) throw new Error(d.error);
     return d.url;
   };
+  const activityRows = data.filter(
+    (row) =>
+      (!filter || JSON.stringify(row).toLowerCase().includes(filter.toLowerCase())) &&
+      (!status || row.type === status) &&
+      (period === 'all' ||
+        new Date(row.createdAt).getTime() >= loadedAt - Number(period) * 86400000),
+  );
+  const exportActivity = () => {
+    const csv = toCsv([
+      ['Time (UTC)', 'Event', 'Details', 'Email', 'IP'],
+      ...activityRows.map((row) => [row.createdAt, row.type, row.message, row.email, row.ip]),
+    ]);
+    const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `maithilok-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
@@ -249,6 +281,12 @@ export function Admin({ section, name }: { section: string; name: string }) {
                   : 'Manage your Maithilok store.'}
             </p>
           </div>
+          {['activity', 'integrations'].includes(section) && (
+            <Button className="secondary" onClick={refresh} disabled={loading}>
+              <RefreshCw size={16} />
+              Refresh
+            </Button>
+          )}
           {['products', 'categories', 'subcategories', 'promotions', 'shipping'].includes(
             section,
           ) && (
@@ -283,6 +321,9 @@ export function Admin({ section, name }: { section: string; name: string }) {
           <p>Loading store data…</p>
         ) : (
           <>
+            {section === 'integrations' && overview?.services && (
+              <Operations services={overview.services} />
+            )}
             {section === 'dashboard' && overview && (
               <>
                 <div className="stat-grid">
@@ -368,10 +409,13 @@ export function Admin({ section, name }: { section: string; name: string }) {
                         Email:{' '}
                         <strong>
                           {overview.mailConfigured
-                            ? 'Gmail connected · alerts go to your inbox'
+                            ? 'Email configured · delivery still needs verification'
                             : 'Not configured · set GMAIL_USER and GMAIL_APP_PASSWORD'}
                         </strong>
                       </p>
+                      <Link className="text-link" href="/admin/integrations">
+                        Payments, email & logs →
+                      </Link>
                       <p className="small">
                         Set real stock in Inventory. Paid orders reduce stock automatically; unpaid
                         orders release their stock after 30 minutes.
@@ -549,6 +593,29 @@ export function Admin({ section, name }: { section: string; name: string }) {
             )}
             {section === 'activity' && (
               <>
+                <div className="activity-tools">
+                  <label>
+                    Time range
+                    <select value={period} onChange={(e) => setPeriod(e.target.value)}>
+                      <option value="all">All loaded records</option>
+                      <option value="1">Last 24 hours</option>
+                      <option value="7">Last 7 days</option>
+                      <option value="30">Last 30 days</option>
+                    </select>
+                  </label>
+                  <Button
+                    className="secondary"
+                    onClick={exportActivity}
+                    disabled={!activityRows.length}
+                  >
+                    <Download size={16} />
+                    Download filtered CSV
+                  </Button>
+                </div>
+                <p className="small">
+                  {activityRows.length} matching records from the latest {data.length} events (up to
+                  300). Times are shown in your device timezone; CSV uses UTC.
+                </p>
                 <Filters
                   filter={filter}
                   setFilter={setFilter}
@@ -570,31 +637,83 @@ export function Admin({ section, name }: { section: string; name: string }) {
                 />
                 <Table
                   headers={['Time', 'Event', 'Details', 'Email', 'IP']}
-                  rows={data
-                    .filter(
-                      (a) =>
-                        (!filter ||
-                          JSON.stringify(a).toLowerCase().includes(filter.toLowerCase())) &&
-                        (!status || a.type === status),
-                    )
-                    .map((a) => (
-                      <tr key={a.id}>
-                        <td>
-                          {new Date(a.createdAt).toLocaleString('en-IN', {
-                            dateStyle: 'medium',
-                            timeStyle: 'short',
-                          })}
-                        </td>
-                        <td>
-                          <span className={`activity-type t-${a.type.toLowerCase()}`}>
-                            {a.type.replaceAll('_', ' ')}
-                          </span>
-                        </td>
-                        <td>{a.message}</td>
-                        <td>{a.email || '—'}</td>
-                        <td>{a.ip || '—'}</td>
-                      </tr>
-                    ))}
+                  rows={activityRows.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        {new Date(a.createdAt).toLocaleString('en-IN', {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        })}
+                      </td>
+                      <td>
+                        <span className={`activity-type t-${a.type.toLowerCase()}`}>
+                          {a.type.replaceAll('_', ' ')}
+                        </span>
+                      </td>
+                      <td>{a.message}</td>
+                      <td>{a.email || '—'}</td>
+                      <td>{a.ip || '—'}</td>
+                    </tr>
+                  ))}
+                />
+              </>
+            )}
+            {section === 'reviews' && (
+              <>
+                <p className="notice">
+                  Only customers with a delivered, paid live order can submit a review. Reviews
+                  appear publicly after approval.
+                </p>
+                <Filters
+                  filter={filter}
+                  setFilter={setFilter}
+                  status={status}
+                  setStatus={setStatus}
+                  choices={['PENDING', 'APPROVED', 'REJECTED']}
+                />
+                <Table
+                  headers={['Product / customer', 'Review', 'Status', 'Moderation']}
+                  rows={rows.map((review) => (
+                    <tr key={review.id}>
+                      <td>
+                        {review.product.name}
+                        <small>{review.user.name}</small>
+                      </td>
+                      <td>
+                        <strong>
+                          {review.rating}/5 · {review.title}
+                        </strong>
+                        <p>{review.body}</p>
+                      </td>
+                      <td>
+                        <span className="status-pill">{review.status}</span>
+                      </td>
+                      <td>
+                        <div className="review-actions">
+                          {['APPROVED', 'REJECTED'].map((value) => (
+                            <button
+                              key={value}
+                              className="text-link"
+                              disabled={busy || review.status === value}
+                              onClick={async () => {
+                                setBusy(true);
+                                try {
+                                  await api('admin/reviews', { id: review.id, status: value });
+                                  await refresh();
+                                } catch (e) {
+                                  setError((e as Error).message);
+                                } finally {
+                                  setBusy(false);
+                                }
+                              }}
+                            >
+                              {value === 'APPROVED' ? 'Approve' : 'Reject'}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 />
               </>
             )}

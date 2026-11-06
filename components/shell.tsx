@@ -23,7 +23,7 @@ import { site, addressLine, telHref } from '@/lib/site';
 export function Logo() {
   return (
     <Link href="/" className="brand" aria-label="Maithilok — home">
-      <Image src="/branding/symbol.svg" width={48} height={48} alt="" priority />
+      <Image src="/branding/symbol-v2.svg" width={48} height={48} alt="" priority />
       <span>
         <span className="wordmark">
           <span className="word-en">Maithilok</span>

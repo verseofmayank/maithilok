@@ -43,6 +43,8 @@ export default async function AdminPage({ params }: { params: Promise<{ slug?: s
       'images',
       'analytics',
       'settings',
+      'integrations',
+      'reviews',
     ].includes(section)
   )
     notFound();

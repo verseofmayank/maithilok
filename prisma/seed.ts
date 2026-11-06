@@ -59,6 +59,11 @@ async function main() {
           : 'Rich and creamy, for sweets and festive cooking.',
     };
     const existing = await db.product.findUnique({ where: { slug } });
+    const defaultImages = [`/products/${slug}-500g.webp`, `/products/${slug}-1kg.webp`];
+    const gallery = [...defaultImages, `/products/${slug}-serving.webp`, `/products/${slug}-overhead.webp`];
+    // Upgrade only the original seeded gallery; preserve owner-uploaded images.
+    if (existing && JSON.stringify(existing.images) === JSON.stringify(defaultImages))
+      await db.product.update({ where: { slug }, data: { images: gallery } });
     if (existing?.description.startsWith('A familiar place in the Indian kitchen'))
       await db.product.update({ where: { slug }, data: copy });
     await db.product.upsert({
@@ -71,7 +76,7 @@ async function main() {
         categoryId: ghee.id,
         subcategory: name,
         ...copy,
-        images: [`/products/${slug}-500g.webp`, `/products/${slug}-1kg.webp`],
+        images: gallery,
         status: 'ACTIVE',
         featured: true,
         details: {

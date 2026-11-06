@@ -18,18 +18,21 @@ import {
   BadgePercent,
   Truck,
   ShieldCheck,
+  MessageSquare,
 } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import type { Product, Category } from '@/lib/types';
 import { money } from '@/lib/utils';
 import { useStore } from './store-provider';
 import { Button, ButtonLink, Empty, Heading, api } from './ui';
+import { ProductReviews } from './reviews';
 function off(price: number, compareAt?: number | null) {
   return compareAt && compareAt > price ? Math.round(((compareAt - price) / compareAt) * 100) : 0;
 }
 export function ProductCard({ product }: { product: Product }) {
+  const [variantId, setVariantId] = useState(product.variants[0]?.id);
   const store = useStore(),
-    v = product.variants[0],
+    v = product.variants.find((variant) => variant.id === variantId) || product.variants[0],
     soon = product.status === 'COMING_SOON',
     discount = v ? off(v.price, v.compareAt) : 0;
   return (
@@ -37,14 +40,20 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="product-photo">
         <Link href={`/products/${product.slug}`}>
           <Image
-            src={product.images[0]}
+            src={v?.image || product.images[0]}
             alt={`Maithilok ${product.name}`}
             fill
             sizes="(max-width:640px) 46vw,(max-width:1000px) 45vw,28vw"
           />
         </Link>
         <span className="product-badge">
-          {soon ? 'Coming soon' : discount ? `${discount}% off` : 'Fresh batch'}
+          {soon
+            ? 'Coming soon'
+            : !v?.stock
+              ? 'Out of stock'
+              : discount
+                ? `${discount}% off`
+                : 'Ghee collection'}
         </span>
         <button
           className={`wish-button ${store.wishlist.includes(product.id) ? 'saved' : ''}`}
@@ -82,7 +91,7 @@ export function ProductCard({ product }: { product: Product }) {
                 {money(v.price)}
                 {discount > 0 && <del>{money(v.compareAt!)}</del>}
               </strong>
-              <span>from · {v.label}</span>
+              <span>{v.label} jar</span>
             </>
           ) : (
             <span>In the making</span>
@@ -90,11 +99,31 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
       </div>
       <p>{product.shortDescription}</p>
+      {!soon && product.variants.length > 1 && (
+        <div className="card-variants" role="group" aria-label={`Choose ${product.name} size`}>
+          {product.variants.map((variant) => (
+            <button
+              key={variant.id}
+              type="button"
+              aria-pressed={v?.id === variant.id}
+              onClick={() => setVariantId(variant.id)}
+            >
+              {variant.label}
+              {!variant.stock && <span> · sold out</span>}
+            </button>
+          ))}
+        </div>
+      )}
       {!soon && v && (
         <div className="card-actions">
-          <button className="button secondary" onClick={() => store.add(v.id)} disabled={!v.stock}>
+          <button
+            className="button secondary"
+            onClick={() => store.add(v.id)}
+            disabled={!v.stock}
+            aria-label={`Add ${product.name} ${v.label} to bag`}
+          >
             <ShoppingBag size={16} />
-            Add
+            Add to bag
           </button>
           <button className="button" onClick={() => store.buyNow(v.id)} disabled={!v.stock}>
             <Zap size={16} />
@@ -147,8 +176,7 @@ export function Home({
   content: Record<string, string>;
 }) {
   const reduce = useReducedMotion();
-  const featured = products.filter((p) => p.status === 'ACTIVE' && p.featured),
-    soon = products.filter((p) => p.status === 'COMING_SOON');
+  const featured = products.filter((p) => p.status === 'ACTIVE' && p.featured);
   return (
     <>
       <section className="hero">
@@ -625,6 +653,7 @@ export function ProductDetail({ product, products }: { product: Product; product
               <button
                 key={src}
                 aria-label={`View ${product.name} image ${i + 1}`}
+                aria-pressed={imageIndex === i}
                 className={imageIndex === i ? 'selected' : ''}
                 onClick={() => setImageIndex(i)}
               >
@@ -632,9 +661,7 @@ export function ProductDetail({ product, products }: { product: Product; product
               </button>
             ))}
           </div>
-          <p className="image-note">
-            Images are for representation. Actual product packaging may vary.
-          </p>
+          <p className="image-note">Illustrative product concepts. Final packaging may vary.</p>
         </div>
         <div className="detail-copy">
           <span className="eyebrow">{product.category?.name || 'MAITHILOK COLLECTION'}</span>
@@ -764,7 +791,7 @@ export function ProductDetail({ product, products }: { product: Product; product
           )}
           {soon && (
             <div className="coming-notice">
-              <h3>A new chapter is on its way.</h3>
+              <h3>This product is coming soon.</h3>
               <p>This product is not available to purchase yet. Subscribe below for updates.</p>
               <ButtonLink href="/contact">Enquire about this product</ButtonLink>
             </div>
@@ -795,8 +822,8 @@ export function ProductDetail({ product, products }: { product: Product; product
                   ))
               ) : (
                 <p>
-                  Ingredients, nutrition, storage, shelf life, FSSAI licence and manufacturer
-                  details are printed on the jar label and will be listed here shortly.
+                  Ingredients, nutrition, storage, shelf life, FSSAI and manufacturer details are
+                  being finalized. Verified information will be published before sales begin.
                 </p>
               )}
             </details>
@@ -833,6 +860,39 @@ export function ProductDetail({ product, products }: { product: Product; product
             Buy now
           </Button>
         </div>
+      )}
+      {!soon && (
+        <>
+          <section className="product-facts" aria-label="Product and ordering details">
+            <div>
+              <Package size={24} />
+              <h3>Choose your jar</h3>
+              <p>
+                {product.variants.map((v) => v.label).join(' or ')}. Select a size to see its price
+                and availability.
+              </p>
+            </div>
+            <div>
+              <Truck size={24} />
+              <h3>Delivery details</h3>
+              <p>
+                Shipping charges and serviceability are confirmed at checkout once delivery opens.
+              </p>
+              <Link href="/shipping-policy" className="text-link">
+                Shipping policy →
+              </Link>
+            </div>
+            <div>
+              <MessageSquare size={24} />
+              <h3>Ask us about it</h3>
+              <p>Need help choosing a product or checking an order? Contact the Maithilok team.</p>
+              <Link href="/contact" className="text-link">
+                Contact us →
+              </Link>
+            </div>
+          </section>
+          <ProductReviews productId={product.id} />
+        </>
       )}
       <section className="section">
         <div className="section-heading">

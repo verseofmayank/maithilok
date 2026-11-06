@@ -36,6 +36,8 @@ export async function readiness() {
     missing.push('Razorpay credentials and webhook secret');
   if (process.env.LIVE_COMMERCE_ENABLED !== 'true')
     missing.push('Live commerce environment switch');
+  if (process.env.RAZORPAY_KEY_ID && !process.env.RAZORPAY_KEY_ID.startsWith('rzp_live_'))
+    missing.push('Live Razorpay API key (test keys cannot accept real orders)');
   if (!process.env.NEXT_PUBLIC_SITE_URL?.startsWith('https://'))
     missing.push('HTTPS storefront URL');
   if (!(await db.shippingRule.count({ where: { active: true } })))

@@ -22,6 +22,7 @@ model Product {
  details Json
  seoTitle String @default("")
  seoDescription String @default("")
+ reviews Review[]
  variants Variant[]
  createdAt DateTime @default(now())
  updatedAt DateTime @updatedAt
@@ -60,6 +61,7 @@ model User {
  phone String @default("")
  wishlist Json @default("[]")
  createdAt DateTime @default(now())
+ reviews Review[]
  sessions Session[]
  addresses Address[]
  orders Order[]
@@ -175,4 +177,20 @@ model ActivityLog {
  createdAt DateTime @default(now())
  @@index([type, createdAt])
  @@index([createdAt])
+}
+
+model Review {
+ id String @id @default(cuid())
+ productId String
+ product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+ userId String
+ user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ rating Int
+ title String
+ body String
+ status String @default("PENDING")
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
+ @@unique([productId, userId])
+ @@index([productId, status, createdAt])
 }

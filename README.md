@@ -1,6 +1,6 @@
 # Maithilok · मैथिल लोक
 
-Production storefront for Maithilok, a ghee brand from **Darbhanga, Bihar**. **Launch steps: see [LAUNCH.md](LAUNCH.md).**
+Working commerce preview for Maithilok, a food brand from **Darbhanga, Bihar**. **Management, logs, payments and hosting: see [Owner guide](docs/OWNER-GUIDE.md).** Commercial launch requirements remain in [LAUNCH.md](LAUNCH.md).
 
 Built with Next.js App Router, TypeScript, Tailwind CSS, Radix accessible dialogs, Lucide, Motion, Prisma, Zod and React Hook Form.
 
@@ -11,7 +11,7 @@ Built with Next.js App Router, TypeScript, Tailwind CSS, Radix accessible dialog
 
 **https://maithilok.vercel.app**
 
-Deployed on Vercel (Node 22) against a Neon PostgreSQL database. The store runs in preview mode until the launch checklist passes, then switches to Razorpay checkout automatically. Gmail (app password) powers contact-form delivery, customer confirmations and owner alerts; every sign-up, sign-in, order, payment and message is recorded in Admin → Activity log. The catalogue is seeded from `prisma/seed.ts`, and no admin account is created in production — use `npm run admin:create` if you need one.
+Deployed on Vercel (Node 22) against Neon PostgreSQL. Real checkout stays disabled until the launch checks and production environment switch are enabled. Optional Gmail/SMTP credentials enable email notifications; no email connection is assumed. Customer events are saved in Admin → Activity log. Admin → Integrations & help shows configuration status without revealing secrets. `npm run admin:create` creates an owner in the currently configured database; the default local SQLite database is separate from production Neon.
 
 Production builds run `npm run vercel-build`: PostgreSQL client generation, `prisma migrate deploy`, the idempotent seed (which also upgrades old copy and image paths) and `next build`. Required environment variables: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEXT_PUBLIC_SITE_URL`, `LIVE_COMMERCE_ENABLED=false`.
 

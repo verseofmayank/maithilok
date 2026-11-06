@@ -57,8 +57,8 @@ export function About({ story }: { story: string }) {
         </div>
         <div className="about-hero-image">
           <Image
-            src="/banners/ghee-hero.webp"
-            alt="A jar of Maithilok ghee with a brass bowl"
+            src="/branding/brand-lockup.svg"
+            alt="Maithilok · मैथिल लोक — leaf and grain emblem, From Mithila, To Your Home"
             fill
             priority
             sizes="(max-width:800px) 100vw,48vw"
