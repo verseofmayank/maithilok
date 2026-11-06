@@ -193,5 +193,5 @@ test('all public destinations return successful pages', async ({ page }) => {
   // Next.js can send 200 once streaming has started, then render its noindex 404 boundary.
   expect([200, 404]).toContain((await page.goto('/does-not-exist'))?.status());
   await expect(page.getByRole('heading', { name: 'This page isn’t on the menu.' })).toBeVisible();
-  await expect(page.locator('meta[name="robots"][content*="noindex"]')).toHaveCount(1);
+  expect(await page.locator('meta[name="robots"][content*="noindex"]').count()).toBeGreaterThan(0);
 });

@@ -546,3 +546,5 @@ em,
  .purchase-row>.button svg{width:16px;height:16px}
  .purchase-row>.wishlist-detail{width:44px;height:44px}
 }
+
+@media(max-width:600px){.hero-copy{width:100%;min-width:0}.hero h1{font-size:36px;line-height:40px}.hero h1 span{white-space:normal;overflow-wrap:normal}.hero-copy p{max-width:100%}}
